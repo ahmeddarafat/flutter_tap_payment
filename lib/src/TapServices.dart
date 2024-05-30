@@ -22,16 +22,15 @@ class TapServices {
         'Accept': 'application/json',
         'Content-Type': 'application/json; charset=UTF-8',
       });
+
       var body = json.decode(response.body);
       if (response.statusCode == 200) {
         debugPrint(body);
         return {'error': false, 'message': body};
       } else {
-        debugPrint(body);
-        return {
-          'error': true,
-          'message': "${body["errors"]?[0]?["description"]}"
-        };
+        String message = body["errors"]?[0]?["description"];
+        debugPrint(message);
+        return {'error': true, 'message': message};
       }
     } catch (e) {
       debugPrint("$e");

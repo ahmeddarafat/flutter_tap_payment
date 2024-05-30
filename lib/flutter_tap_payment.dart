@@ -22,7 +22,6 @@ class TapPayment extends StatefulWidget {
     Key? key,
     required this.onSuccess,
     required this.onError,
-    //
     required this.apiKey,
     required this.redirectUrl,
     required this.postUrl,
@@ -61,7 +60,6 @@ class TapPaymentState extends State<TapPayment> {
           loadingError = false;
         });
         _controller.loadRequest(Uri.parse(checkoutUrl));
-
       } else {
         widget.onError(getPayment);
         setState(() {
@@ -84,7 +82,6 @@ class TapPaymentState extends State<TapPayment> {
   void initState() {
     super.initState();
     var formData = {};
-    //formData = widget.paymentData;
     formData['post'] = {"url": widget.postUrl};
     formData['redirect'] = {"url": widget.redirectUrl};
     services = TapServices(
@@ -184,8 +181,6 @@ class TapPaymentState extends State<TapPayment> {
     // #enddocregion platform_features
 
     _controller = controller;
-
-    // Enable hybrid composition.
   }
 
   @override
@@ -259,7 +254,9 @@ class TapPaymentState extends State<TapPayment> {
           body: SizedBox(
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
-            child: loading || (checkoutUrl == 'https://tap.company' && loadingError == false)
+            child: loading ||
+                    (checkoutUrl == 'https://tap.company' &&
+                        loadingError == false)
                 ? const Column(
                     children: [
                       Expanded(
