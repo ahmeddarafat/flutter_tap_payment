@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_tap_payment/src/errors/network_error.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -61,7 +63,7 @@ class _CompletePaymentState extends State<CompletePayment> {
     return message;
   }
 
-  complete() async {
+  void complete() async {
     final uri = Uri.parse(widget.url);
     final tapID = uri.queryParameters['tap_id'];
     if (tapID != null) {
@@ -72,7 +74,8 @@ class _CompletePaymentState extends State<CompletePayment> {
         });
       }
 
-      Map resp = await widget.services.confirmPayment(tapID);
+      Map<String, dynamic> resp = await widget.services.confirmPayment(tapID);
+      log("Response: $resp", name: "CompletePayment.complete");
       if (resp['error'] == false) {
         if (resp['data']?['status'] == "CAPTURED") {
           Map data = resp['data'];
@@ -83,9 +86,8 @@ class _CompletePaymentState extends State<CompletePayment> {
               loading = false;
               loadingError = false;
             });
+            Navigator.pop(context);
           }
-          // ignore: use_build_context_synchronously
-          Navigator.pop(context);
         } else {
           Map data = resp['data'];
           data['message'] = getMessage(resp['data']);
@@ -95,9 +97,8 @@ class _CompletePaymentState extends State<CompletePayment> {
               loading = false;
               loadingError = false;
             });
+            Navigator.pop(context);
           }
-          // ignore: use_build_context_synchronously
-          Navigator.pop(context);
         }
       } else {
         if (resp['exception'] != null && resp['exception'] == true) {
@@ -110,13 +111,16 @@ class _CompletePaymentState extends State<CompletePayment> {
           }
         } else {
           await widget.onError(resp['data']);
-          // ignore: use_build_context_synchronously
-          Navigator.of(context).pop();
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
         }
       }
       //return NavigationDecision.prevent;
     } else {
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     }
   }
 
