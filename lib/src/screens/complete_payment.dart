@@ -9,12 +9,12 @@ class CompletePayment extends StatefulWidget {
   final TapServices services;
   final String url;
   const CompletePayment({
-    Key? key,
+    super.key,
     required this.onSuccess,
     required this.onError,
     required this.services,
     required this.url,
-  }) : super(key: key);
+  });
 
   @override
   // ignore: library_private_types_in_public_api
@@ -65,10 +65,12 @@ class _CompletePaymentState extends State<CompletePayment> {
     final uri = Uri.parse(widget.url);
     final tapID = uri.queryParameters['tap_id'];
     if (tapID != null) {
-      setState(() {
-        loading = true;
-        loadingError = false;
-      });
+      if (mounted) {
+        setState(() {
+          loading = true;
+          loadingError = false;
+        });
+      }
 
       Map resp = await widget.services.confirmPayment(tapID);
       if (resp['error'] == false) {
@@ -76,30 +78,36 @@ class _CompletePaymentState extends State<CompletePayment> {
           Map data = resp['data'];
           data['message'] = getMessage(resp['data']);
           await widget.onSuccess(data);
-          setState(() {
-            loading = false;
-            loadingError = false;
-          });
+          if (mounted) {
+            setState(() {
+              loading = false;
+              loadingError = false;
+            });
+          }
           // ignore: use_build_context_synchronously
           Navigator.pop(context);
         } else {
           Map data = resp['data'];
           data['message'] = getMessage(resp['data']);
           widget.onError(data);
-          setState(() {
-            loading = false;
-            loadingError = false;
-          });
+          if (mounted) {
+            setState(() {
+              loading = false;
+              loadingError = false;
+            });
+          }
           // ignore: use_build_context_synchronously
           Navigator.pop(context);
         }
       } else {
         if (resp['exception'] != null && resp['exception'] == true) {
           widget.onError({"message": resp['message']});
-          setState(() {
-            loading = false;
-            loadingError = true;
-          });
+          if (mounted) {
+            setState(() {
+              loading = false;
+              loadingError = true;
+            });
+          }
         } else {
           await widget.onError(resp['data']);
           // ignore: use_build_context_synchronously
