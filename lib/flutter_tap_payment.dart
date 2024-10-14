@@ -17,17 +17,17 @@ import 'src/errors/network_error.dart';
 class TapPayment extends StatefulWidget {
   final Function onSuccess, onError;
   final String apiKey, redirectUrl, postUrl;
-  final Map paymentData;
+  final Map<String, dynamic> paymentData;
 
   const TapPayment({
-    Key? key,
+    super.key,
     required this.onSuccess,
     required this.onError,
     required this.apiKey,
     required this.redirectUrl,
     required this.postUrl,
     required this.paymentData,
-  }) : super(key: key);
+  });
 
   @override
   State<StatefulWidget> createState() {
@@ -37,20 +37,22 @@ class TapPayment extends StatefulWidget {
 
 class TapPaymentState extends State<TapPayment> {
   late final WebViewController _controller;
+  late TapServices services;
+
   String checkoutUrl = 'https://tap.company';
   String navUrl = 'tap.company';
   bool loading = true;
   bool pageLoading = true;
   bool loadingError = false;
-  late TapServices services;
   int pressed = 0;
 
-  loadPayment() async {
+  void loadPayment() async {
     setState(() {
       loading = true;
     });
     try {
       Map getPayment = await services.sendPayment();
+
       final data = json.decode(getPayment['message']);
       if (getPayment['error'] == false &&
           data?['transaction']?["url"] != null) {
