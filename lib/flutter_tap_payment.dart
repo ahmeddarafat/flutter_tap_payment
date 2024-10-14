@@ -46,42 +46,6 @@ class TapPaymentState extends State<TapPayment> {
   bool loadingError = false;
   int pressed = 0;
 
-  void loadPayment() async {
-    setState(() {
-      loading = true;
-    });
-    try {
-      Map getPayment = await services.sendPayment();
-
-      final data = json.decode(getPayment['message']);
-      if (getPayment['error'] == false &&
-          data?['transaction']?["url"] != null) {
-        setState(() {
-          checkoutUrl = data['transaction']["url"].toString();
-          navUrl = data['transaction']["url"].toString();
-          loading = false;
-          pageLoading = false;
-          loadingError = false;
-        });
-        _controller.loadRequest(Uri.parse(checkoutUrl));
-      } else {
-        widget.onError(getPayment);
-        setState(() {
-          loading = false;
-          pageLoading = false;
-          loadingError = true;
-        });
-      }
-    } catch (e) {
-      widget.onError(e);
-      setState(() {
-        loading = false;
-        pageLoading = false;
-        loadingError = true;
-      });
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -89,12 +53,16 @@ class TapPaymentState extends State<TapPayment> {
     formData['post'] = {"url": widget.postUrl};
     formData['redirect'] = {"url": widget.redirectUrl};
     services = TapServices(
-        apiKey: widget.apiKey,
-        paymentData: {...widget.paymentData, ...formData});
-    setState(() {
-      navUrl = 'checkout.payments.tap.company';
-    });
-    loadPayment();
+      apiKey: widget.apiKey,
+      paymentData: {...widget.paymentData, ...formData},
+    );
+
+    if (mounted) {
+      setState(() {
+        navUrl = 'checkout.payments.tap.company';
+      });
+    }
+    _loadPayment();
 
     // #docregion platform_features
     late final PlatformWebViewControllerCreationParams params;
@@ -120,17 +88,21 @@ class TapPaymentState extends State<TapPayment> {
             debugPrint('WebView is loading (progress : $progress%)');
           },
           onPageStarted: (String url) {
-            setState(() {
-              pageLoading = true;
-              loadingError = false;
-            });
+            if (mounted) {
+              setState(() {
+                pageLoading = true;
+                loadingError = false;
+              });
+            }
             debugPrint('Page started loading: $url');
           },
           onPageFinished: (String url) {
-            setState(() {
-              navUrl = url;
-              pageLoading = false;
-            });
+            if (mounted) {
+              setState(() {
+                navUrl = url;
+                pageLoading = false;
+              });
+            }
           },
           onWebResourceError: (WebResourceError error) {
             debugPrint('''
@@ -192,9 +164,11 @@ class TapPaymentState extends State<TapPayment> {
     return WillPopScope(
       onWillPop: () async {
         if (pressed < 2) {
-          setState(() {
-            pressed++;
-          });
+          if (mounted) {
+            setState(() {
+              pressed++;
+            });
+          }
           final snackBar = SnackBar(
               content: Text(
                   'Press back ${3 - pressed} more times to cancel transaction'));
@@ -279,7 +253,7 @@ class TapPaymentState extends State<TapPayment> {
                           Expanded(
                             child: Center(
                               child: NetworkError(
-                                  loadData: loadPayment,
+                                  loadData: _loadPayment,
                                   message: "Something went wrong,"),
                             ),
                           ),
@@ -294,5 +268,50 @@ class TapPaymentState extends State<TapPayment> {
                       ),
           )),
     );
+  }
+
+  void _loadPayment() async {
+    if (mounted) {
+      setState(() {
+        loading = true;
+      });
+    }
+    try {
+      Map getPayment = await services.sendPayment();
+
+      final data = json.decode(getPayment['message']);
+      if (getPayment['error'] == false &&
+          data?['transaction']?["url"] != null) {
+        if (mounted) {
+          setState(() {
+            checkoutUrl = data['transaction']["url"].toString();
+            navUrl = data['transaction']["url"].toString();
+            loading = false;
+            pageLoading = false;
+            loadingError = false;
+          });
+        }
+        _controller.loadRequest(Uri.parse(checkoutUrl));
+      } else {
+        widget.onError(getPayment);
+        if (mounted) {
+          setState(() {
+            loading = false;
+            pageLoading = false;
+            loadingError = true;
+          });
+        }
+      }
+    } catch (e) {
+      widget.onError(e);
+      if (mounted) {
+        setState(() {
+          loading = false;
+
+          pageLoading = false;
+          loadingError = true;
+        });
+      }
+    }
   }
 }
