@@ -77,10 +77,19 @@ class _CompletePaymentState extends State<CompletePayment> {
       Map<String, dynamic> resp = await widget.services.confirmPayment(tapID);
       log("Response: $resp", name: "CompletePayment.complete");
       if (resp['error'] == false) {
+        log("resp error: ${resp['error']}", name: "CompletePayment.complete");
+
         if (resp['data']?['status'] == "CAPTURED") {
+          log("resp data status: ${resp['data']['status']}",
+              name: "CompletePayment.complete");
           Map data = resp['data'];
+
+          log("resp data: $data", name: "CompletePayment.complete");
+
           data['message'] = getMessage(resp['data']);
+          log("resp data: $data", name: "CompletePayment.complete");
           await widget.onSuccess(data);
+          
           if (mounted) {
             setState(() {
               loading = false;
