@@ -31,6 +31,8 @@ class TapServices {
       var body = json.decode(response.body);
       if (status == 200) {
         log("Payment sent successfully", name: "TapServices.sendPayment");
+        log("payment Sent Body: ${response.body}",
+            name: "TapServices.sendPayment");
         return {'error': false, 'message': response.body};
       } else {
         log("Error: ${body.toString()}", name: "TapServices.sendPayment");
