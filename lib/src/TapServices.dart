@@ -61,14 +61,14 @@ class TapServices {
         return {
           'error': false,
           'message': "Confirmed",
-          'data': body.toString()
+          'data': body,
         };
       } else {
         log("Payment inconclusive", name: "TapServices.confirmPayment");
         return {
           'error': true,
           'message': "Payment inconclusive.",
-          'data': body.toString()
+          'data': body,
         };
       }
     } catch (e) {

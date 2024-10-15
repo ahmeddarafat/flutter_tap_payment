@@ -2,8 +2,8 @@ library flutter_tap_payment;
 
 import 'dart:convert';
 import 'dart:core';
+import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:flutter_tap_payment/src/screens/complete_payment.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 // Import for Android features.
@@ -121,15 +121,9 @@ class TapPaymentState extends State<TapPayment> {
             if (request.url.contains(widget.redirectUrl)) {
               final uri = Uri.parse(request.url);
               debugPrint("Got back: ${uri.queryParameters}");
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => CompletePayment(
-                        url: request.url,
-                        services: services,
-                        onSuccess: widget.onSuccess,
-                        onError: widget.onError)),
-              );
+              if (mounted) {
+                _completePayment(request.url);
+              }
             }
             debugPrint('allowing navigation to ${request.url}');
             return NavigationDecision.navigate;
@@ -142,9 +136,11 @@ class TapPaymentState extends State<TapPayment> {
       ..addJavaScriptChannel(
         'Toaster',
         onMessageReceived: (JavaScriptMessage message) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message.message)),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(message.message)),
+            );
+          }
         },
       );
 
@@ -313,5 +309,66 @@ class TapPaymentState extends State<TapPayment> {
         });
       }
     }
+  }
+
+  void _completePayment(String url) async {
+    final uri = Uri.parse(url);
+    final tapID = uri.queryParameters['tap_id'];
+    if (tapID != null) {
+      Map<String, dynamic> resp = await services.confirmPayment(tapID);
+      if (resp['error'] == false) {
+        Map<String, dynamic> data = resp['data'];
+        String status = data['status'];
+        if (status == "CAPTURED") {
+          data['message'] = _getMessage(resp['data']);
+          await widget.onSuccess(data);
+        } else {
+          data['message'] = _getMessage(resp['data']);
+          widget.onError(data);
+        }
+      } else {
+        if (resp['exception'] != null && resp['exception'] == true) {
+          widget.onError({"message": resp['message']});
+        } else {
+          await widget.onError(resp['data']);
+        }
+      }
+    }
+  }
+
+  String _getMessage(data) {
+    String message = "";
+    switch (data['status']) {
+      case "CAPTURED":
+        message = "The transaction completed successfully";
+        break;
+      case "ABANDONED":
+        message = "The transaction has been abandoned";
+        break;
+      case "CANCELLED":
+        message = "The transaction has been cancelled";
+        break;
+      case "FAILED":
+        message = "The transaction has failed";
+        break;
+      case "DECLINED":
+        message = "The transaction has been declined";
+        break;
+      case "RESTRICTED":
+        message = "The transaction is restricted";
+        break;
+      case "VOID":
+        message = "The transaction is voided";
+        break;
+      case "TIMEDOUT":
+        message = "The transaction is timedout";
+        break;
+      case "UNKNOWN":
+        message = "The transaction is unknown";
+        break;
+      default:
+        message = "The transaction cannot be completed";
+    }
+    return message;
   }
 }
